@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 
 const transactionSchema = new mongoose.Schema({
-    userId: {
+    user_id: {
       type: String,
       required: true,
     },
