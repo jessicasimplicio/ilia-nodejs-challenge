@@ -1,8 +1,12 @@
+require('dotenv').config
 const express = require('express')
+const conn = require('./db/conn')
 
 const app = express()
 
 app.use(express.json())
+
+conn()
 
 // Health check
 app.get('/health', (req, res) => {
