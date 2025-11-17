@@ -1,12 +1,14 @@
 require('dotenv').config
 const express = require('express')
+const router = require('./routes/routes')
 const conn = require('./db/conn')
 
 const app = express()
-
 app.use(express.json())
 
 conn()
+
+app.use('/transactions', router)
 
 // Health check
 app.get('/health', (req, res) => {
