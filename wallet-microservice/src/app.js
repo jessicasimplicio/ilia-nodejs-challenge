@@ -8,7 +8,7 @@ app.use(express.json())
 
 conn()
 
-app.use('/transactions', router)
+app.use('/', router)
 
 // Health check
 app.get('/health', (req, res) => {
