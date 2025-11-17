@@ -1,0 +1,29 @@
+services:
+  wallet-service:
+    build: .
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - JWT_SECRET=ILIACHALLENGE
+      - MONGODB_URI=mongodb://mongodb:27017/wallet
+    depends_on:
+      - mongodb
+    networks:
+      - wallet-network
+
+  mongodb:
+    image: mongo:5
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - wallet-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  wallet-network:
+    driver: bridge
