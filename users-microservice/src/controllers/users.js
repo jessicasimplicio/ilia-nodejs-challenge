@@ -18,7 +18,6 @@ const registerUser = async (req, res) => {
     }
 
     const response = await User.create(user)
-    console.log('response', response)
 
     const formatedResponse = {
       user: {
