@@ -70,4 +70,14 @@ const loginUser = async (req, res) => {
   }
 }
 
-module.exports = { registerUser, loginUser }
+const findUsers = async (req, res) => {
+  try {
+    const users = await User.find().select('-password -__v')
+
+    res.status(201).json({ users })
+  } catch (err) {
+    res.status(400).json({ message: 'finding users', err })
+  }
+}
+
+module.exports = { registerUser, loginUser, findUsers }
