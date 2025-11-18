@@ -64,17 +64,21 @@ const loginUser = async (req, res) => {
       access_token: accessToken,
     }
 
-    res.status(201).json({ ...formatedResponse })
+    res.status(200).json({ ...formatedResponse })
   } catch (err) {
     res.status(400).json({ message: 'Error when registering user', err })
   }
 }
 
-const findUsers = async (req, res) => {
+const findUsers = async (_req, res) => {
   try {
     const users = await User.find().select('-password -__v')
 
-    res.status(201).json({ users })
+    res.status(200).json({ users })
+  } catch (err) {
+    res.status(400).json({ message: 'Error finding users', err })
+  }
+}
   } catch (err) {
     res.status(400).json({ message: 'finding users', err })
   }
