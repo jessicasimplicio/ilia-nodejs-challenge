@@ -1,7 +1,10 @@
 const express = require('express')
+const conn = require('./db/conn')
 
 const app = express()
 app.use(express.json())
+
+conn()
 
 const PORT = process.env.PORT || 3002
 app.listen(PORT, () => {
