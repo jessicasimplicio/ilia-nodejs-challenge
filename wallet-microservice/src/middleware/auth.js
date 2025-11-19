@@ -1,14 +1,13 @@
 const jwt = require('jsonwebtoken')
 
-const JWT_INTERNAL_SECRET = process.env.JWT_INTERNAL_SECRET
-const JWT_SECRET = process.env.JWT_SECRET
-
 const auth = (req, res, next) => {
   const token = req.headers.authorization?.replace('Bearer ', '')
-
   if (!token) {
     return res.status(401).json({ error: 'Access token is missing or invalid' })
   }
+
+  const JWT_INTERNAL_SECRET = process.env.JWT_INTERNAL_SECRET
+  const JWT_SECRET = process.env.JWT_SECRET
 
   try {
     const decoded = jwt.verify(token, JWT_INTERNAL_SECRET)
