@@ -1,0 +1,37 @@
+version: '3.8'
+services:
+  wallet-service:
+    build: ./wallet-microservice
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - JWT_SECRET=ILIACHALLENGE
+      - JWT_INTERNAL_SECRET=ILIACHALLENGE_INTERNAL
+      - MONGODB_URI=mongodb://wallet-db:27017/wallet
+    depends_on:
+      - wallet-db
+
+  users-service:
+    build: ./users-microservice
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - JWT_SECRET=ILIACHALLENGE
+      - JWT_INTERNAL_SECRET=ILIACHALLENGE_INTERNAL
+      - MONGODB_URI=mongodb://users-db:27017/users
+      - WALLET_SERVICE_URL=http://wallet-service:3001
+    depends_on:
+      - users-db
+      - wallet-service
+
+  wallet-db:
+    image: mongo:5
+    ports:
+      - "27017:27017"
+
+  users-db:
+    image: mongo:5  
+    ports:
+      - "27018:27017"

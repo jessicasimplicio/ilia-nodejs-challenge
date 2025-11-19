@@ -45,6 +45,25 @@ Managiment of users of the Digital Wallet.
 2. Copy `.env.example` to `.env` and set environment variables
 4. Run `docker-compose up --build`
 
+### More about how to run docker:
+- Build and start all services:
+`docker-compose up --build`
+
+- Build specific service:
+`docker-compose build wallet-service`
+
+- Start in detached mode:
+`docker-compose up -d`
+
+- View logs:
+`docker-compose logs -f wallet-service`
+
+- Stop all services
+`docker-compose down`
+
+- Stop and remove volumes`
+`docker-compose down -v`
+
 ### Development mode:
 - Run `npm run dev`
 
