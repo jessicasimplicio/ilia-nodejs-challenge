@@ -1,47 +1,46 @@
-const Transaction = require('../models/Transaction');
+const Transaction = require('../models/Transaction')
 
-createTransaction = async (req, res) => {
-	try {
-		const { user_id, amount, type } = req.body
+const createTransaction = async (req, res) => {
+  try {
+    const { user_id, amount, type } = req.body
 
-		const transaction = {
-			user_id,
-			amount,
-			type
-		}
+    const transaction = {
+      user_id,
+      amount,
+      type,
+    }
 
-		const response = await Transaction.create(transaction)
-		res.status(201).json({ response, message: 'Transaction created' })
-	} catch (err) {
-		console.log(err)
-		res.status(500).json({ message: "Error when saving", err })
-	}
+    const response = await Transaction.create(transaction)
+    res.status(201).json({ response, message: 'Transaction created' })
+  } catch (err) {
+    console.log(err)
+    res.status(500).json({ message: 'Error when saving', err })
+  }
 }
 
-getTransactions = async (req, res) => {
-	try {
-		const type = req.query.type
+const getTransactions = async (req, res) => {
+  try {
+    const type = req.query.type
 
-		const result = await Transaction.find({type})
-	
-		res.status(200).json({ result, message: 'Transactions found!' })
+    const result = await Transaction.find({ type })
 
-	} catch (err) {
-		console.log(err)
-		res.status(500).json({ message: "Erro when fiding transaction", err })
-	}
+    res.status(200).json({ result, message: 'Transactions found!' })
+  } catch (err) {
+    console.log(err)
+    res.status(500).json({ message: 'Erro when fiding transaction', err })
+  }
 }
 
-getBalance = async (req, res) => {
-	try {
-		const user_id = req.params.user_id
-		console.log('user_id', user_id)
+const getBalance = async (req, res) => {
+  try {
+    const user_id = req.params.user_id
+    console.log('user_id', user_id)
 
-		const result = await Transaction.aggregate([
+    const result = await Transaction.aggregate([
       {
         $match: {
-          user_id
-        }
+          user_id,
+        },
       },
       {
         $group: {
@@ -49,21 +48,21 @@ getBalance = async (req, res) => {
           netBalance: {
             $sum: {
               $cond: [
-                { $eq: ["$type", "credit"] },
-                "$amount",
-                { $multiply: ["$amount", -1] }
-              ]
-            }
-          }
-        }
-      }
+                { $eq: ['$type', 'credit'] },
+                '$amount',
+                { $multiply: ['$amount', -1] },
+              ],
+            },
+          },
+        },
+      },
     ])
-	
-		res.status(200).json({ amount: result[0].netBalance })
-	} catch (err) {
-		console.log(err)
-		res.status(500).json({ message: "Erro when fiding transaction", err })
-	}
+
+    res.status(200).json({ amount: result[0].netBalance })
+  } catch (err) {
+    console.log(err)
+    res.status(500).json({ message: 'Erro when fiding transaction', err })
+  }
 }
 
 module.exports = { createTransaction, getTransactions, getBalance }

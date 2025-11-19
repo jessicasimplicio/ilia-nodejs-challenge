@@ -4,6 +4,8 @@ const router = require('./routes/routes')
 const conn = require('./db/conn')
 const auth = require('./middleware/auth')
 
+const PORT = process.env.PORT
+
 const app = express()
 app.use(express.json())
 
@@ -11,7 +13,6 @@ conn()
 
 app.use('/', auth, router)
 
-const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Wallet microservice running on port ${PORT}`)
 })
