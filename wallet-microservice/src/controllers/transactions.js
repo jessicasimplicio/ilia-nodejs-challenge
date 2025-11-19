@@ -13,7 +13,6 @@ const createTransaction = async (req, res) => {
     const response = await Transaction.create(transaction)
     res.status(201).json({ response, message: 'Transaction created' })
   } catch (err) {
-    console.log(err)
     res.status(500).json({ message: 'Error when saving', err })
   }
 }
@@ -26,7 +25,6 @@ const getTransactions = async (req, res) => {
 
     res.status(200).json({ result, message: 'Transactions found!' })
   } catch (err) {
-    console.log(err)
     res.status(500).json({ message: 'Erro when fiding transaction', err })
   }
 }
@@ -34,7 +32,6 @@ const getTransactions = async (req, res) => {
 const getBalance = async (req, res) => {
   try {
     const user_id = req.params.user_id
-    console.log('user_id', user_id)
 
     const result = await Transaction.aggregate([
       {
