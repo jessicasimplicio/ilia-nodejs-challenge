@@ -21,9 +21,16 @@ const getTransactions = async (req, res) => {
   try {
     const type = req.query.type
 
-    const result = await Transaction.find({ type })
+    if (type && !['CREDIT', 'DEBIT'].includes(type)) {
+      return res
+        .status(400)
+        .json({ message: "Invalid type query: must be 'CREDIT' or 'DEBIT'" })
+    }
 
-    res.status(200).json({ result, message: 'Transactions found!' })
+    const filter = type ? { type } : {}
+    const result = await Transaction.find(filter)
+
+    res.status(200).json({ result, message: 'Transactions found' })
   } catch (err) {
     res.status(500).json({ message: 'Erro when fiding transaction', err })
   }
@@ -32,6 +39,9 @@ const getTransactions = async (req, res) => {
 const getBalance = async (req, res) => {
   try {
     const user_id = req.params.user_id
+    if (!user_id) {
+      return res.status(400).json({ message: 'Missing user_id param' })
+    }
 
     const result = await Transaction.aggregate([
       {
@@ -55,7 +65,10 @@ const getBalance = async (req, res) => {
       },
     ])
 
-    res.status(200).json({ amount: result[0].netBalance })
+    const amount =
+      result && result[0] && result[0].netBalance ? result[0].netBalance : 0
+
+    res.status(200).json({ amount })
   } catch (err) {
     console.log(err)
     res.status(500).json({ message: 'Erro when fiding transaction', err })
