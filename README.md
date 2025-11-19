@@ -38,6 +38,7 @@ Managiment of users of the Digital Wallet.
 - CRUD of the users
 - JWT authentication for private routes
 - MongoDB database
+- Communication to the wallet service through REST
 
 ## Running the project:
 
@@ -85,3 +86,50 @@ Create a jwt token with the secret given in the challenge.
 - `GET /api/users/:id` - Find user by id
 - `PATCH /api/users/:id` - Update user by id
 - `DELETE /api/users/:id` - Delete user by id
+
+
+## Testing locally the communication between the services
+It was created a integration between registering an new user and creating a (first or initial) transaction. 
+
+It seems that the following flow makes sense from the perspective of a business rule:
+
+- User registers → Create user account in Users service
+- Initialize wallet → Create wallet in Wallet service
+- Set initial balance → Start with 0 amount in CREDIT
+
+### Testing:
+1. Start all services: `docker-compose up --build`
+2. Make a `POST` to `http://localhost:3002/api/users` with:
+
+```
+{
+    "first_name": "Teste",
+    "last_name": "@Teste",
+    "email": "teste@example.com",
+    "password": "password123"
+}
+  ```
+3. Check if the transaction was created:
+`GET http://localhost:3001/api/transactions`
+Pass a JWT token in the Bearer (the JWT need to be created with the right secret)
+
+In case of success you should be something like this:
+
+```
+[
+  {
+    "id": "123928392",
+    "user_id": "507f1f77bcf86cd799439011", 
+    "type": "CREDIT",
+    "amount": 0
+  }
+]
+```
+
+4. If you want you can check the internals calls running:
+
+`docker-compose logs -f wallet-service`
+
+`docker-compose logs -f users-service`
+
+

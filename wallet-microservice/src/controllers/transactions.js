@@ -65,8 +65,7 @@ const getBalance = async (req, res) => {
       },
     ])
 
-    const amount =
-      result && result[0] && result[0].netBalance ? result[0].netBalance : 0
+    const amount = result?.[0]?.netBalance ?? 0
 
     res.status(200).json({ amount })
   } catch (err) {
