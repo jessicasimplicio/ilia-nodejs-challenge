@@ -79,9 +79,16 @@ const findUsers = async (_req, res) => {
     res.status(400).json({ message: 'Error finding users', err })
   }
 }
+
+const getUser = async (req, res) => {
+  try {
+    const id = req.params.id
+    const user = await User.findOne({ _id: id }).select('-password -__v')
+
+    res.status(200).json({ user })
   } catch (err) {
-    res.status(400).json({ message: 'finding users', err })
+    res.status(400).json({ message: 'Error getting user', err })
   }
 }
 
-module.exports = { registerUser, loginUser, findUsers }
+module.exports = { registerUser, loginUser, findUsers, getUser }
