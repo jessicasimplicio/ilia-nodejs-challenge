@@ -11,7 +11,7 @@ app.use(express.json())
 
 conn()
 
-app.use('/', auth, router)
+app.use('/api/', auth, router)
 
 app.listen(PORT, () => {
   console.log(`Wallet microservice running on port ${PORT}`)
