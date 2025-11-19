@@ -1,6 +1,7 @@
 const User = require('../models/User')
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
+const walletService = require('../services/walletServices')
 
 const JWT_SECRET = process.env.JWT_SECRET
 
@@ -18,6 +19,15 @@ const registerUser = async (req, res) => {
     }
 
     const response = await User.create(user)
+
+    try {
+      await walletService.createFirstTransaction(response._id.toString())
+    } catch (err) {
+      console.log(
+        'Wallet initialization failed, but user was created. Error: ',
+        err.message
+      )
+    }
 
     const formatedResponse = {
       user: {
