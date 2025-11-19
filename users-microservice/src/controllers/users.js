@@ -83,12 +83,44 @@ const findUsers = async (_req, res) => {
 const getUser = async (req, res) => {
   try {
     const id = req.params.id
-    const user = await User.findOne({ _id: id }).select('-password -__v')
+    const user = await User.findOne({ _id: id }).select('-password')
 
-    res.status(200).json({ user })
+    const response = {
+      id: user._id.toString(),
+      first_name: user.first_name,
+      last_name: user.last_name,
+      email: user.email,
+    }
+    res.status(200).json({ response })
   } catch (err) {
     res.status(400).json({ message: 'Error getting user', err })
   }
 }
 
-module.exports = { registerUser, loginUser, findUsers, getUser }
+const updateUser = async (req, res) => {
+  try {
+    const { first_name, last_name, email } = req.body
+
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { first_name, last_name, email },
+      { new: true, runValidators: true }
+    ).select('-password')
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' })
+    }
+
+    const response = {
+      id: user._id.toString(),
+      first_name: user.first_name,
+      last_name: user.last_name,
+      email: user.email,
+    }
+    res.status(200).json({ response })
+  } catch (err) {
+    return res.status(404).json({ message: 'Error updating user', err })
+  }
+}
+
+module.exports = { registerUser, loginUser, findUsers, getUser, updateUser }

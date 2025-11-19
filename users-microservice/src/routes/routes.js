@@ -4,6 +4,7 @@ const {
   loginUser,
   findUsers,
   getUser,
+  updateUser,
 } = require('../controllers/users')
 const auth = require('../middleware/auth')
 
@@ -15,5 +16,6 @@ router.post('/users', registerUser)
 
 router.get('/users', auth, findUsers)
 router.get('/users/:id', auth, getUser)
+router.patch('/users/:id', auth, updateUser)
 
 module.exports = router
