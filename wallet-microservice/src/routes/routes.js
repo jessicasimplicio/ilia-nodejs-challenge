@@ -4,11 +4,32 @@ const {
   getBalance,
   getTransactions,
 } = require('../controllers/transactions')
+const { handleValidationErrors } = require('../middleware/validationSchema')
+const {
+  createTransactionValidator,
+  getTransactionsValidator,
+  getBalanceValidator,
+} = require('../utils/validators/transactionSchemas')
 
 const router = express.Router()
 
-router.post('/transactions', createTransaction)
-router.get('/transactions', getTransactions)
-router.get('/balance/:user_id', getBalance)
+router.post(
+  '/transactions',
+  createTransactionValidator,
+  handleValidationErrors,
+  createTransaction
+)
+router.get(
+  '/transactions',
+  getTransactionsValidator,
+  handleValidationErrors,
+  getTransactions
+)
+router.get(
+  '/balance/:user_id',
+  getBalanceValidator,
+  handleValidationErrors,
+  getBalance
+)
 
 module.exports = router
