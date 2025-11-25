@@ -10,6 +10,7 @@ const {
   updateUser,
   deleteUser,
 } = require('../controllers/users')
+const { HTTP_STATUS, ERROR_MESSAGES } = require('../utils/constants/httpStatus')
 
 jest.mock('../models/User')
 jest.mock('jsonwebtoken')
@@ -52,14 +53,18 @@ describe('Users Controller', () => {
     await registerUser(req, res)
 
     expect(User.create).toHaveBeenCalled()
-    expect(res.status).toHaveBeenCalledWith(201)
+    expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.CREATED)
     expect(res.json).toHaveBeenCalledWith({
-      user: {
-        id: '123',
-        first_name: 'John',
-        last_name: 'Doe',
-        email: 'john@example.com',
+      success: true,
+      data: {
+        user: {
+          id: '123',
+          first_name: 'John',
+          last_name: 'Doe',
+          email: 'john@example.com',
+        },
       },
+      message: 'User registered successfully',
     })
   })
 
@@ -138,8 +143,11 @@ describe('Users Controller', () => {
 
     await loginUser(req, res)
 
-    expect(res.status).toHaveBeenCalledWith(404)
-    expect(res.json).toHaveBeenCalledWith({ error: 'User doens`t exist' })
+    expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.UNAUTHORIZED)
+    expect(res.json).toHaveBeenCalledWith({
+      error: 'Invalid credentials',
+      success: false,
+    })
   })
 
   it('should return error when password is invalid', async () => {
@@ -159,8 +167,11 @@ describe('Users Controller', () => {
 
     await loginUser(req, res)
 
-    expect(res.status).toHaveBeenCalledWith(400)
-    expect(res.json).toHaveBeenCalledWith({ error: 'Invalid password' })
+    expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.UNAUTHORIZED)
+    expect(res.json).toHaveBeenCalledWith({
+      error: 'Invalid credentials',
+      success: false,
+    })
   })
 
   it('should get all users successfully', async () => {
@@ -185,8 +196,12 @@ describe('Users Controller', () => {
 
     await findUsers(req, res)
 
-    expect(res.status).toHaveBeenCalledWith(200)
-    expect(res.json).toHaveBeenCalledWith({ users: mockUsers })
+    expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.OK)
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      message: '',
+      data: { users: mockUsers },
+    })
   })
 
   it('should get specific user successfully', async () => {
@@ -205,7 +220,23 @@ describe('Users Controller', () => {
     await getUser(req, res)
 
     expect(User.findOne).toHaveBeenCalledWith({ _id: '123' })
-    expect(res.status).toHaveBeenCalledWith(200)
+    expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.OK)
+  })
+
+  it('should return error when user not found in getUser', async () => {
+    req.params.id = '999'
+
+    User.findOne.mockReturnValue({
+      select: jest.fn().mockResolvedValue(null),
+    })
+
+    await getUser(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.NOT_FOUND)
+    expect(res.json).toHaveBeenCalledWith({
+      success: false,
+      error: ERROR_MESSAGES.USER_NOT_FOUND,
+    })
   })
 
   it('should update user successfully', async () => {
@@ -236,6 +267,27 @@ describe('Users Controller', () => {
     expect(res.status).toHaveBeenCalledWith(200)
   })
 
+  it('should return error when user not found in updateUser', async () => {
+    req.params.id = '999'
+    req.body = {
+      first_name: 'Johnny',
+      last_name: 'Smith',
+      email: 'johnny@example.com',
+    }
+
+    User.findByIdAndUpdate.mockReturnValue({
+      select: jest.fn().mockResolvedValue(null),
+    })
+
+    await updateUser(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.NOT_FOUND)
+    expect(res.json).toHaveBeenCalledWith({
+      success: false,
+      error: ERROR_MESSAGES.USER_NOT_FOUND,
+    })
+  })
+
   it('should delete user successfully', async () => {
     req.params.id = '123'
     const mockUser = { _id: '123', first_name: 'John' }
@@ -246,5 +298,33 @@ describe('Users Controller', () => {
 
     expect(User.findByIdAndDelete).toHaveBeenCalledWith({ _id: '123' })
     expect(res.status).toHaveBeenCalledWith(204)
+  })
+
+  it('should return error when user not found in deleteUser', async () => {
+    req.params.id = '999'
+
+    User.findByIdAndDelete.mockResolvedValue(null)
+
+    await deleteUser(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.NOT_FOUND)
+    expect(res.json).toHaveBeenCalledWith({
+      success: false,
+      error: ERROR_MESSAGES.USER_NOT_FOUND,
+    })
+  })
+
+  it('should handle database errors in findUsers', async () => {
+    User.find.mockReturnValue({
+      select: jest.fn().mockRejectedValue(new Error('Database error')),
+    })
+
+    await findUsers(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+    expect(res.json).toHaveBeenCalledWith({
+      success: false,
+      error: 'Database error',
+    })
   })
 })
