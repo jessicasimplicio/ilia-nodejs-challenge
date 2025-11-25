@@ -2,12 +2,23 @@ const User = require('../models/User')
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
 const walletService = require('../services/walletServices')
+const { HTTP_STATUS, ERROR_MESSAGES } = require('../utils/constants/httpStatus')
+const responseHandler = require('../utils/responseHandler')
 
 const JWT_SECRET = process.env.JWT_SECRET
 
 const registerUser = async (req, res) => {
   try {
     const { first_name, last_name, password, email } = req.body.user
+
+    const existingUser = await User.findOne({ email })
+    if (existingUser) {
+      return responseHandler.error(
+        res,
+        ERROR_MESSAGES.USER_ALREADY_EXISTS,
+        HTTP_STATUS.BAD_REQUEST
+      )
+    }
 
     const salt = await bcrypt.genSalt(10)
     const hashPassword = await bcrypt.hash(password, salt)
@@ -38,9 +49,18 @@ const registerUser = async (req, res) => {
       },
     }
 
-    res.status(201).json({ ...formatedResponse })
+    responseHandler.success(
+      res,
+      formatedResponse,
+      'User registered successfully',
+      HTTP_STATUS.CREATED
+    )
   } catch (err) {
-    res.status(400).json({ message: 'Error when registering user', err })
+    responseHandler.error(
+      res,
+      ERROR_MESSAGES.REGISTRATION_FAILED,
+      HTTP_STATUS.BAD_REQUEST
+    )
   }
 }
 
@@ -50,12 +70,20 @@ const loginUser = async (req, res) => {
 
     let user = await User.findOne({ email })
     if (!user) {
-      return res.status(404).json({ error: 'User doens`t exist' })
+      return responseHandler.error(
+        res,
+        ERROR_MESSAGES.INVALID_CREDENTIALS,
+        HTTP_STATUS.UNAUTHORIZED
+      )
     }
 
     const isMatch = await bcrypt.compare(password, user.password)
     if (!isMatch) {
-      return res.status(400).json({ error: 'Invalid password' })
+      return responseHandler.error(
+        res,
+        ERROR_MESSAGES.INVALID_CREDENTIALS,
+        HTTP_STATUS.UNAUTHORIZED
+      )
     }
 
     const accessToken = jwt.sign(
@@ -74,9 +102,13 @@ const loginUser = async (req, res) => {
       access_token: accessToken,
     }
 
-    res.status(200).json({ ...formatedResponse })
+    responseHandler.success(res, formatedResponse, 'Login successful')
   } catch (err) {
-    res.status(400).json({ message: 'Error when registering user', err })
+    responseHandler.error(
+      res,
+      ERROR_MESSAGES.REGISTRATION_FAILED,
+      HTTP_STATUS.BAD_REQUEST
+    )
   }
 }
 
@@ -84,9 +116,9 @@ const findUsers = async (_req, res) => {
   try {
     const users = await User.find().select('-password -__v')
 
-    res.status(200).json({ users })
+    responseHandler.success(res, { users })
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    responseHandler.error(res, err.message, HTTP_STATUS.INTERNAL_SERVER_ERROR)
   }
 }
 
@@ -96,7 +128,11 @@ const getUser = async (req, res) => {
     const user = await User.findOne({ _id: id }).select('-password')
 
     if (!user) {
-      return res.status(404).json({ error: 'User not found' })
+      return responseHandler.error(
+        res,
+        ERROR_MESSAGES.USER_NOT_FOUND,
+        HTTP_STATUS.NOT_FOUND
+      )
     }
 
     const response = {
@@ -105,9 +141,9 @@ const getUser = async (req, res) => {
       last_name: user.last_name,
       email: user.email,
     }
-    res.status(200).json({ response })
+    responseHandler.success(res, { user: response })
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    responseHandler.error(res, err.message, HTTP_STATUS.INTERNAL_SERVER_ERROR)
   }
 }
 
@@ -122,7 +158,11 @@ const updateUser = async (req, res) => {
     ).select('-password')
 
     if (!user) {
-      return res.status(404).json({ error: 'User not found' })
+      return responseHandler.error(
+        res,
+        ERROR_MESSAGES.USER_NOT_FOUND,
+        HTTP_STATUS.NOT_FOUND
+      )
     }
 
     const response = {
@@ -131,9 +171,14 @@ const updateUser = async (req, res) => {
       last_name: user.last_name,
       email: user.email,
     }
-    res.status(200).json({ response })
+
+    responseHandler.success(
+      res,
+      { user: response },
+      'User updated successfully'
+    )
   } catch (err) {
-    return res.status(500).json({ error: err.message })
+    responseHandler.error(res, err.message, HTTP_STATUS.INTERNAL_SERVER_ERROR)
   }
 }
 
@@ -142,12 +187,21 @@ const deleteUser = async (req, res) => {
     const id = req.params.id
     const user = await User.findByIdAndDelete({ _id: id })
     if (!user) {
-      return res.status(404).json({ error: 'User not found' })
+      return responseHandler.error(
+        res,
+        ERROR_MESSAGES.USER_NOT_FOUND,
+        HTTP_STATUS.NOT_FOUND
+      )
     }
 
-    return res.status(204).json({ message: 'User deleted' })
+    responseHandler.success(
+      res,
+      null,
+      'User deleted successfully',
+      HTTP_STATUS.NO_CONTENT
+    )
   } catch (err) {
-    return res.status(500).json({ error: err.message })
+    responseHandler.error(res, err.message, HTTP_STATUS.INTERNAL_SERVER_ERROR)
   }
 }
 

@@ -10,6 +10,7 @@ const {
   updateUser,
   deleteUser,
 } = require('../controllers/users')
+const { HTTP_STATUS } = require('../utils/constants/httpStatus')
 
 jest.mock('../models/User')
 jest.mock('jsonwebtoken')
@@ -52,14 +53,18 @@ describe('Users Controller', () => {
     await registerUser(req, res)
 
     expect(User.create).toHaveBeenCalled()
-    expect(res.status).toHaveBeenCalledWith(201)
+    expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.CREATED)
     expect(res.json).toHaveBeenCalledWith({
-      user: {
-        id: '123',
-        first_name: 'John',
-        last_name: 'Doe',
-        email: 'john@example.com',
+      success: true,
+      data: {
+        user: {
+          id: '123',
+          first_name: 'John',
+          last_name: 'Doe',
+          email: 'john@example.com',
+        },
       },
+      message: 'User registered successfully',
     })
   })
 
@@ -138,8 +143,11 @@ describe('Users Controller', () => {
 
     await loginUser(req, res)
 
-    expect(res.status).toHaveBeenCalledWith(404)
-    expect(res.json).toHaveBeenCalledWith({ error: 'User doens`t exist' })
+    expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.UNAUTHORIZED)
+    expect(res.json).toHaveBeenCalledWith({
+      error: 'Invalid credentials',
+      success: false,
+    })
   })
 
   it('should return error when password is invalid', async () => {
@@ -159,8 +167,11 @@ describe('Users Controller', () => {
 
     await loginUser(req, res)
 
-    expect(res.status).toHaveBeenCalledWith(400)
-    expect(res.json).toHaveBeenCalledWith({ error: 'Invalid password' })
+    expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.UNAUTHORIZED)
+    expect(res.json).toHaveBeenCalledWith({
+      error: 'Invalid credentials',
+      success: false,
+    })
   })
 
   it('should get all users successfully', async () => {
@@ -185,8 +196,12 @@ describe('Users Controller', () => {
 
     await findUsers(req, res)
 
-    expect(res.status).toHaveBeenCalledWith(200)
-    expect(res.json).toHaveBeenCalledWith({ users: mockUsers })
+    expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.OK)
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      message: '',
+      data: { users: mockUsers },
+    })
   })
 
   it('should get specific user successfully', async () => {
@@ -205,7 +220,7 @@ describe('Users Controller', () => {
     await getUser(req, res)
 
     expect(User.findOne).toHaveBeenCalledWith({ _id: '123' })
-    expect(res.status).toHaveBeenCalledWith(200)
+    expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.OK)
   })
 
   it('should update user successfully', async () => {
