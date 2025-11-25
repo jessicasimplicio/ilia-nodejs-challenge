@@ -4,6 +4,12 @@ const {
   getTransactions,
   getBalance,
 } = require('../controllers/transactions')
+const {
+  HTTP_STATUS,
+  ERROR_MESSAGES,
+  SUCCESS_MESSAGES,
+} = require('../utils/constants/httpStatus')
+const { success } = require('../utils/responseHandler')
 
 jest.mock('../models/Transaction')
 
@@ -21,16 +27,32 @@ describe('Transactions Controller', () => {
 
   it('should create transaction successfully', async () => {
     req.body = { user_id: '123', amount: 100, type: 'CREDIT' }
-    const mockTransaction = { _id: '1', ...req.body }
+    const mockTransaction = {
+      _id: '1',
+      user_id: '123',
+      amount: 100,
+      type: 'CREDIT',
+      createdAt: '2023-01-01T00:00:00.000Z',
+    }
+
     Transaction.create.mockResolvedValue(mockTransaction)
 
     await createTransaction(req, res)
 
-    expect(Transaction.create).toHaveBeenCalledWith(req.body)
-    expect(res.status).toHaveBeenCalledWith(201)
+    expect(Transaction.create).toHaveBeenCalledWith({
+      user_id: '123',
+      amount: 100,
+      type: 'CREDIT',
+    })
+    expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.CREATED)
     expect(res.json).toHaveBeenCalledWith({
-      response: mockTransaction,
-      message: 'Transaction created',
+      success: true,
+      data: {
+        user_id: '123',
+        amount: 100,
+        type: 'CREDIT',
+      },
+      message: SUCCESS_MESSAGES.TRANSACTION_CREATED,
     })
   })
 
@@ -43,22 +65,34 @@ describe('Transactions Controller', () => {
 
     expect(res.status).toHaveBeenCalledWith(500)
     expect(res.json).toHaveBeenCalledWith({
-      message: 'Error when saving',
-      err: mockError,
+      error: ERROR_MESSAGES.TRANSACTION_CREATION_FAILED,
+      success: false,
     })
   })
 
   it('should get all transactions successfully', async () => {
-    const mockTransactions = [{ _id: '1', amount: 100, type: 'CREDIT' }]
+    const mockTransactions = [
+      { _id: '1', amount: 100, type: 'CREDIT', user_id: '123' },
+    ]
     Transaction.find.mockResolvedValue(mockTransactions)
 
     await getTransactions(req, res)
 
     expect(Transaction.find).toHaveBeenCalledWith({})
-    expect(res.status).toHaveBeenCalledWith(200)
+    expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.OK)
     expect(res.json).toHaveBeenCalledWith({
-      result: mockTransactions,
-      message: 'Transactions found',
+      success: true,
+      data: {
+        transactions: [
+          {
+            id: '1',
+            user_id: '123',
+            amount: 100,
+            type: 'CREDIT',
+          },
+        ],
+      },
+      message: SUCCESS_MESSAGES.TRANSACTIONS_FOUND,
     })
   })
 
@@ -70,7 +104,7 @@ describe('Transactions Controller', () => {
     await getTransactions(req, res)
 
     expect(Transaction.find).toHaveBeenCalledWith({ type: 'CREDIT' })
-    expect(res.status).toHaveBeenCalledWith(200)
+    expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.OK)
   })
 
   it('should return error for invalid type filter', async () => {
@@ -78,9 +112,10 @@ describe('Transactions Controller', () => {
 
     await getTransactions(req, res)
 
-    expect(res.status).toHaveBeenCalledWith(400)
+    expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.BAD_REQUEST)
     expect(res.json).toHaveBeenCalledWith({
-      message: "Invalid type query: must be 'CREDIT' or 'DEBIT'",
+      success: false,
+      error: ERROR_MESSAGES.INVALID_TRANSACTION_TYPE,
     })
     expect(Transaction.find).not.toHaveBeenCalled()
   })
@@ -91,10 +126,10 @@ describe('Transactions Controller', () => {
 
     await getTransactions(req, res)
 
-    expect(res.status).toHaveBeenCalledWith(500)
+    expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.INTERNAL_SERVER_ERROR)
     expect(res.json).toHaveBeenCalledWith({
-      message: 'Erro when fiding transaction',
-      err: mockError,
+      success: false,
+      error: ERROR_MESSAGES.TRANSACTION_FETCH_FAILED,
     })
   })
 
@@ -106,8 +141,31 @@ describe('Transactions Controller', () => {
     await getBalance(req, res)
 
     expect(Transaction.aggregate).toHaveBeenCalled()
-    expect(res.status).toHaveBeenCalledWith(200)
-    expect(res.json).toHaveBeenCalledWith({ amount: 150 })
+    expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.OK)
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: {
+        amount: 150,
+      },
+      message: SUCCESS_MESSAGES.BALANCE_CALCULATED,
+    })
+  })
+
+  it('should get balance successfully with negative balance', async () => {
+    req.params.user_id = '123'
+    const mockResult = [{ netBalance: -50 }]
+    Transaction.aggregate.mockResolvedValue(mockResult)
+
+    await getBalance(req, res)
+
+    expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.OK)
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: {
+        amount: -50,
+      },
+      message: SUCCESS_MESSAGES.BALANCE_CALCULATED,
+    })
   })
 
   it('should return zero balance when no transactions found', async () => {
@@ -116,8 +174,14 @@ describe('Transactions Controller', () => {
 
     await getBalance(req, res)
 
-    expect(res.status).toHaveBeenCalledWith(200)
-    expect(res.json).toHaveBeenCalledWith({ amount: 0 })
+    expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.OK)
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: {
+        amount: 0,
+      },
+      message: SUCCESS_MESSAGES.BALANCE_CALCULATED,
+    })
   })
 
   it('should return error when user_id is missing in getBalance', async () => {
@@ -125,9 +189,10 @@ describe('Transactions Controller', () => {
 
     await getBalance(req, res)
 
-    expect(res.status).toHaveBeenCalledWith(400)
+    expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.BAD_REQUEST)
     expect(res.json).toHaveBeenCalledWith({
-      message: 'Missing user_id param',
+      success: false,
+      error: ERROR_MESSAGES.MISSING_USER_ID,
     })
     expect(Transaction.aggregate).not.toHaveBeenCalled()
   })
@@ -139,10 +204,10 @@ describe('Transactions Controller', () => {
 
     await getBalance(req, res)
 
-    expect(res.status).toHaveBeenCalledWith(500)
+    expect(res.status).toHaveBeenCalledWith(HTTP_STATUS.INTERNAL_SERVER_ERROR)
     expect(res.json).toHaveBeenCalledWith({
-      message: 'Erro when fiding transaction',
-      err: mockError,
+      success: false,
+      error: ERROR_MESSAGES.BALANCE_FETCH_FAILED,
     })
   })
 })

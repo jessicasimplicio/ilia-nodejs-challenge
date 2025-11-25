@@ -1,9 +1,14 @@
 const Transaction = require('../models/Transaction')
+const {
+  SUCCESS_MESSAGES,
+  HTTP_STATUS,
+  ERROR_MESSAGES,
+} = require('../utils/constants/httpStatus')
+const responseHandler = require('../utils/responseHandler')
 
 const createTransaction = async (req, res) => {
   try {
     const { user_id, amount, type } = req.body
-
     const transaction = {
       user_id,
       amount,
@@ -11,9 +16,24 @@ const createTransaction = async (req, res) => {
     }
 
     const response = await Transaction.create(transaction)
-    res.status(201).json({ response, message: 'Transaction created' })
+    const formattedResponse = {
+      user_id: response.user_id,
+      amount: response.amount,
+      type: response.type,
+    }
+
+    responseHandler.success(
+      res,
+      formattedResponse,
+      SUCCESS_MESSAGES.TRANSACTION_CREATED,
+      HTTP_STATUS.CREATED
+    )
   } catch (err) {
-    res.status(500).json({ message: 'Error when saving', err })
+    responseHandler.error(
+      res,
+      ERROR_MESSAGES.TRANSACTION_CREATION_FAILED,
+      HTTP_STATUS.INTERNAL_SERVER_ERROR
+    )
   }
 }
 
@@ -22,17 +42,34 @@ const getTransactions = async (req, res) => {
     const type = req.query.type
 
     if (type && !['CREDIT', 'DEBIT'].includes(type)) {
-      return res
-        .status(400)
-        .json({ message: "Invalid type query: must be 'CREDIT' or 'DEBIT'" })
+      return responseHandler.error(
+        res,
+        ERROR_MESSAGES.INVALID_TRANSACTION_TYPE,
+        HTTP_STATUS.BAD_REQUEST
+      )
     }
 
     const filter = type ? { type } : {}
     const result = await Transaction.find(filter)
 
-    res.status(200).json({ result, message: 'Transactions found' })
+    const formattedResult = result.map((transaction) => ({
+      id: transaction._id.toString(),
+      user_id: transaction.user_id,
+      amount: transaction.amount,
+      type: transaction.type,
+    }))
+
+    responseHandler.success(
+      res,
+      { transactions: formattedResult },
+      SUCCESS_MESSAGES.TRANSACTIONS_FOUND
+    )
   } catch (err) {
-    res.status(500).json({ message: 'Erro when fiding transaction', err })
+    responseHandler.error(
+      res,
+      ERROR_MESSAGES.TRANSACTION_FETCH_FAILED,
+      HTTP_STATUS.INTERNAL_SERVER_ERROR
+    )
   }
 }
 
@@ -40,7 +77,11 @@ const getBalance = async (req, res) => {
   try {
     const user_id = req.params.user_id
     if (!user_id) {
-      return res.status(400).json({ message: 'Missing user_id param' })
+      return responseHandler.error(
+        res,
+        ERROR_MESSAGES.MISSING_USER_ID,
+        HTTP_STATUS.BAD_REQUEST
+      )
     }
 
     const result = await Transaction.aggregate([
@@ -55,7 +96,7 @@ const getBalance = async (req, res) => {
           netBalance: {
             $sum: {
               $cond: [
-                { $eq: ['$type', 'credit'] },
+                { $eq: ['$type', 'CREDIT'] },
                 '$amount',
                 { $multiply: ['$amount', -1] },
               ],
@@ -67,10 +108,19 @@ const getBalance = async (req, res) => {
 
     const amount = result?.[0]?.netBalance ?? 0
 
-    res.status(200).json({ amount })
+    responseHandler.success(
+      res,
+      {
+        amount,
+      },
+      SUCCESS_MESSAGES.BALANCE_CALCULATED
+    )
   } catch (err) {
-    console.log(err)
-    res.status(500).json({ message: 'Erro when fiding transaction', err })
+    responseHandler.error(
+      res,
+      ERROR_MESSAGES.BALANCE_FETCH_FAILED,
+      HTTP_STATUS.INTERNAL_SERVER_ERROR
+    )
   }
 }
 
