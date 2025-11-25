@@ -126,7 +126,7 @@ In case of success you should be something like this:
 ]
 ```
 
-4. If you want you can check the internals calls running:
+4. If you want you can check internals calls while containers are running:
 
 `docker-compose logs -f wallet-service`
 
