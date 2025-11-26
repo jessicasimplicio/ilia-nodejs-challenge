@@ -5,7 +5,7 @@ const {
   getUserValidator,
   updateUserValidator,
   deleteUserValidator,
-} = require('../utils/validators/usersValidators')
+} = require('../../utils/validators/usersValidators')
 
 const createMockRequest = (body = {}, params = {}, query = {}) => ({
   body,
@@ -68,24 +68,6 @@ describe('User Validators', () => {
       expect(result.isEmpty()).toBe(false)
       expect(result.array()[0].msg).toContain(
         'Password must be between 8 and 100 characters'
-      )
-    })
-
-    it('should fail validation with password without uppercase and numbers', async () => {
-      const req = createMockRequest({
-        user: {
-          first_name: 'John',
-          last_name: 'Doe',
-          email: 'john@example.com',
-          password: 'password',
-        },
-      })
-
-      const result = await testValidator(registerUserValidator, req)
-
-      expect(result.isEmpty()).toBe(false)
-      expect(result.array()[0].msg).toContain(
-        'Password must contain at least one lowercase letter, one uppercase letter and one number'
       )
     })
 

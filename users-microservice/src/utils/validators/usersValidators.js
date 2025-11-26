@@ -27,10 +27,6 @@ const registerUserValidator = [
   body('user.password')
     .isLength({ min: 8, max: 100 })
     .withMessage('Password must be between 8 and 100 characters')
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-    .withMessage(
-      'Password must contain at least one lowercase letter, one uppercase letter and one number'
-    ),
 ]
 
 const loginUserValidator = [
