@@ -12,7 +12,7 @@ describe('Auth Middleware', () => {
     process.env.JWT_SECRET = 'regular-secret'
 
     jwt = require('jsonwebtoken')
-    auth = require('../middleware/auth')
+    auth = require('../../middleware/auth')
 
     jest.clearAllMocks()
 
