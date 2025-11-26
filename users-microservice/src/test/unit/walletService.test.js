@@ -1,6 +1,6 @@
 const axios = require('axios')
 const jwt = require('jsonwebtoken')
-const walletService = require('../services/walletServices')
+const walletService = require('../../services/walletServices')
 
 jest.mock('axios')
 jest.mock('jsonwebtoken')

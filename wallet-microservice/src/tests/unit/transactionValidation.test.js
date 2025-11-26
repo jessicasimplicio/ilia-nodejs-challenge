@@ -5,7 +5,7 @@ const {
   getBalanceValidator,
   updateTransactionValidator,
   deleteTransactionValidator,
-} = require('../utils/validators/transactionSchemas')
+} = require('../../utils/validators/transactionSchemas')
 
 const createMockRequest = (body = {}, params = {}, query = {}) => ({
   body,
