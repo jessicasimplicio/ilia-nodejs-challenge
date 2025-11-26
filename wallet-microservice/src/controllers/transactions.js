@@ -12,7 +12,7 @@ const createTransaction = async (req, res) => {
     const transaction = {
       user_id,
       amount,
-      type,
+      type: type.toUpperCase(),
     }
 
     const response = await Transaction.create(transaction)
@@ -41,14 +41,6 @@ const getTransactions = async (req, res) => {
   try {
     const type = req.query.type
 
-    if (type && !['CREDIT', 'DEBIT'].includes(type)) {
-      return responseHandler.error(
-        res,
-        ERROR_MESSAGES.INVALID_TRANSACTION_TYPE,
-        HTTP_STATUS.BAD_REQUEST
-      )
-    }
-
     const filter = type ? { type } : {}
     const result = await Transaction.find(filter)
 
@@ -76,13 +68,6 @@ const getTransactions = async (req, res) => {
 const getBalance = async (req, res) => {
   try {
     const user_id = req.params.user_id
-    if (!user_id) {
-      return responseHandler.error(
-        res,
-        ERROR_MESSAGES.MISSING_USER_ID,
-        HTTP_STATUS.BAD_REQUEST
-      )
-    }
 
     const result = await Transaction.aggregate([
       {
